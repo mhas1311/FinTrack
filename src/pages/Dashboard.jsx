@@ -140,7 +140,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-gray-950 text-white p-4 md:p-8">
       {/* Cabeçalho */}
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold">FinTrack💰</h1>
+        <h1 className="text-3xl font-bold">FinTrack 💰</h1>
         <div className="flex items-center gap-4">
           <ExportButton transactions={transactions} />
           <button onClick={signOut} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
@@ -154,14 +154,14 @@ export default function Dashboard() {
         <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
           <div className="flex items-center gap-3 mb-2">
             <div className="bg-emerald-900 p-2 rounded-lg"><TrendingUp size={20} className="text-emerald-400" /></div>
-            <span className="text-gray-400">Receitas💵</span>
+            <span className="text-gray-400">Receitas</span>
           </div>
           <p className="text-2xl font-bold text-emerald-400">{formatMoney(totalIncome)}</p>
         </div>
         <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
           <div className="flex items-center gap-3 mb-2">
             <div className="bg-red-900 p-2 rounded-lg"><TrendingDown size={20} className="text-red-400" /></div>
-            <span className="text-gray-400">Despesas💸</span>
+            <span className="text-gray-400">Despesas</span>
           </div>
           <p className="text-2xl font-bold text-red-400">{formatMoney(totalExpense)}</p>
         </div>

@@ -97,8 +97,8 @@ export default function Transactions() {
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors"
           >
             Adicionar Categoria
-          </Link>
-          <ExportButton transactions={transactions} />
+            </Link>
+          {/*<ExportButton transactions={transactions} />*/}
         </div>
       </div>
 
