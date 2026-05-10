@@ -70,7 +70,8 @@ export default function Categories() {
   const cancelEdit = () => setEditingId(null)
 
   const colorOptions = [
-    '#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#6b7280',
+    '#ef4444', '#fb923c', '#f59e0b', '#eab308', '#65a30d', '#22c55e',
+    '#06b6d4', '#2563eb', '#7c3aed', '#d946ef', '#ec4899', '#9ca3af',
   ]
 
   return (
@@ -107,39 +108,47 @@ export default function Categories() {
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Cor</label>
-            <div className="flex gap-2 items-center">
+            <div className="flex flex-wrap gap-2 items-center">
               {colorOptions.map((c) => (
                 <button
                   key={c}
                   type="button"
-                  onClick={() => setColor(c)}
-                  className={`w-8 h-8 rounded-full border-2 ${color === c ? 'border-white scale-110' : 'border-transparent'} transition-transform`}
+                  onClick={() => {
+                    setColor(c)
+                    setShowColorPicker(false)
+                  }}
+                  className={`w-6 h-6 rounded-full border-2 ${color === c ? 'border-white scale-110' : 'border-transparent'} transition-transform`}
                   style={{ backgroundColor: c }}
                 />
               ))}
-              {/* Botão gradiente para cor personalizada */}
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setShowColorPicker(!showColorPicker)}
-                  className={`w-8 h-8 rounded-full border-2 ${colorOptions.includes(color) ? 'border-transparent' : 'border-white scale-110'} transition-transform`}
+                  onClick={() => setShowColorPicker((prev) => !prev)}
+                  className={`w-8 h-8 rounded-full border-2 ${!colorOptions.includes(color) ? 'border-white scale-110' : 'border-transparent'} transition-transform`}
                   style={{
                     background: 'linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #80ff00, #00ff00, #00ff80, #00ffff, #0080ff, #0000ff, #8000ff, #ff00ff, #ff0080)',
-                    backgroundSize: '50% 50%',
+                    backgroundSize: '200% 200%',
                     animation: 'gradient 3s ease infinite'
                   }}
+                  aria-label="Escolher cor personalizada"
                 />
                 {showColorPicker && (
                   <input
                     type="color"
                     value={color}
-                    onChange={(e) => setColor(e.target.value)}
-                    className="absolute top-10 left-0 w-8 h-8 rounded-full border-2 border-gray-600 cursor-pointer"
-                    style={{ zIndex: 10 }}
+                    onChange={(e) => {
+                      setColor(e.target.value)
+                      setShowColorPicker(false)
+                    }}
+                    className="absolute -top-3 left-0 w-8 h-8 rounded-full border-2 border-gray-600 cursor-pointer opacity-0"
+                    style={{ zIndex: 20 }}
+                    aria-label="Seletor de cores"
                   />
                 )}
               </div>
             </div>
+            <p className="mt-2 text-xs text-gray-500">Clique em uma cor pequena ou escolha sua própria com o seletor.</p>
           </div>
         </div>
         <button type="submit" className="mt-4 flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 px-6 py-2 rounded-lg font-medium transition-colors">
