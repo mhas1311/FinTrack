@@ -13,6 +13,7 @@ export default function Categories() {
   const [color, setColor] = useState('#10b981')
   const [editingId, setEditingId] = useState(null)
   const [editName, setEditName] = useState('')
+  const [showColorPicker, setShowColorPicker] = useState(false)
 
   const fetchCategories = async () => {
     setLoading(true)
@@ -106,10 +107,38 @@ export default function Categories() {
           </div>
           <div>
             <label className="block text-sm text-gray-400 mb-1">Cor</label>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               {colorOptions.map((c) => (
-                <button key={c} type="button" onClick={() => setColor(c)} className={`w-8 h-8 rounded-full border-2 ${color === c ? 'border-white scale-110' : 'border-transparent'} transition-transform`} style={{ backgroundColor: c }} />
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setColor(c)}
+                  className={`w-8 h-8 rounded-full border-2 ${color === c ? 'border-white scale-110' : 'border-transparent'} transition-transform`}
+                  style={{ backgroundColor: c }}
+                />
               ))}
+              {/* Botão gradiente para cor personalizada */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setShowColorPicker(!showColorPicker)}
+                  className={`w-8 h-8 rounded-full border-2 ${colorOptions.includes(color) ? 'border-transparent' : 'border-white scale-110'} transition-transform`}
+                  style={{
+                    background: 'linear-gradient(45deg, #ff0000, #ff8000, #ffff00, #80ff00, #00ff00, #00ff80, #00ffff, #0080ff, #0000ff, #8000ff, #ff00ff, #ff0080)',
+                    backgroundSize: '50% 50%',
+                    animation: 'gradient 3s ease infinite'
+                  }}
+                />
+                {showColorPicker && (
+                  <input
+                    type="color"
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
+                    className="absolute top-10 left-0 w-8 h-8 rounded-full border-2 border-gray-600 cursor-pointer"
+                    style={{ zIndex: 10 }}
+                  />
+                )}
+              </div>
             </div>
           </div>
         </div>
