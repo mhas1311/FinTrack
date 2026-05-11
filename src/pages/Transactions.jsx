@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
 import { Trash2, Plus, ArrowLeft } from 'lucide-react'
-import ExportButton from '../components/ExportButton'
+
 
 export default function Transactions() {
   const { user } = useAuth()
@@ -16,6 +16,59 @@ export default function Transactions() {
   const [categoryId, setCategoryId] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [adding, setAdding] = useState(false)
+
+  const getSituationBadge = (t) => {
+    const situation = t.status || null
+
+
+    if (t.type === 'income') {
+      if (situation === 'received') {
+        return (
+          <span className="px-2 py-1 rounded-full text-xs font-medium bg-emerald-900 text-emerald-200 border border-emerald-700">
+            Recebido
+          </span>
+        )
+      }
+
+      return (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-yellow-500 text-amber-900 border border-amber-700">
+          Pendente
+        </span>
+      )
+    }
+
+    // expense
+    if (situation === 'paid') {
+      return (
+        <span className="px-2 py-1 rounded-full text-xs font-medium bg-emerald-900 text-emerald-200 border border-emerald-700">
+          Pago
+        </span>
+      )
+    }
+
+    return (
+      <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-900 text-red-200 border border-red-700">
+        Pendente
+      </span>
+    )
+  }
+
+  const updateTransactionSituation = async (id, newSituation) => {
+    const { error } = await supabase
+      .from('transactions')
+      .update({ status: newSituation })
+      .eq('id', id)
+
+
+    if (error) {
+      console.error('Erro ao atualizar situação:', error)
+      return
+    }
+
+    fetchTransactions()
+  }
+
+
 
   const fetchCategories = async () => {
     const { data, error } = await supabase
@@ -58,6 +111,12 @@ export default function Transactions() {
     e.preventDefault()
     if (!description || !amount) return
     setAdding(true)
+
+    const defaultSituation = type === 'income' ? 'pending' : 'pending'
+    // Mapeamento conforme pedido:
+    // - Receita: pending/received
+    // - Despesa: pending/paid
+
     const newTransaction = {
       user_id: user.id,
       description,
@@ -65,9 +124,14 @@ export default function Transactions() {
       type,
       category_id: categoryId || null,
       date,
+      status: defaultSituation,
     }
+
+    // Debug útil: se houver erro, loga
     const { error } = await supabase.from('transactions').insert(newTransaction)
-    if (!error) {
+    if (error) {
+      console.error('Erro ao adicionar transação:', error)
+    } else {
       setDescription('')
       setAmount('')
       setCategoryId('')
@@ -75,6 +139,7 @@ export default function Transactions() {
     }
     setAdding(false)
   }
+
 
   const handleDelete = async (id) => {
     const { error } = await supabase.from('transactions').delete().eq('id', id)
@@ -96,7 +161,7 @@ export default function Transactions() {
             to="/categories"
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded-lg font-medium transition-colors"
           >
-            Adicionar Categoria
+            Categorias
             </Link>
           {/*<ExportButton transactions={transactions} />*/}
         </div>
@@ -143,6 +208,7 @@ export default function Transactions() {
                 <th className="p-4">Descrição</th>
                 <th className="p-4">Categoria</th>
                 <th className="p-4">Tipo</th>
+                <th className="p-4">Situação</th>
                 <th className="p-4 text-right">Valor</th>
                 <th className="p-4"></th>
               </tr>
@@ -153,6 +219,7 @@ export default function Transactions() {
                   <td className="p-4">{new Date(t.date).toLocaleDateString('pt-BR')}</td>
                   <td className="p-4">{t.description}</td>
                   <td className="p-4">
+
                     {t.category ? (
                       <span className="flex items-center gap-2">
                         <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.category.color }} />
@@ -164,6 +231,26 @@ export default function Transactions() {
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${t.type === 'income' ? 'bg-emerald-900 text-emerald-300' : 'bg-red-900 text-red-300'}`}>
                       {t.type === 'income' ? 'Receita' : 'Despesa'}
                     </span>
+                  </td>
+      <td className="p-4">
+                    {(() => {
+                      const situation = t.status || null
+                      const isIncome = t.type === 'income'
+                      const next = isIncome
+                        ? (situation === 'received' ? 'pending' : 'received')
+                        : (situation === 'paid' ? 'pending' : 'paid')
+
+                      return (
+                        <button
+                          type="button"
+                          onClick={() => updateTransactionSituation(t.id, next)}
+                          className="cursor-pointer"
+                          title={isIncome ? 'Recebido/Pendente' : 'Pago/Pendente'}
+                        >
+                          {getSituationBadge(t)}
+                        </button>
+                      )
+                    })()}
                   </td>
                   <td className={`p-4 text-right font-medium ${t.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
                     {formatMoney(t.amount)}

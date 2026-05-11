@@ -27,12 +27,88 @@ export default function Categories() {
     setLoading(false)
   }
 
+  const DEFAULT_CATEGORIES = [
+    { name: 'Compras', type: 'expense', color: '#ef4444' },
+    { name: 'Cartão', type: 'expense', color: '#fb923c' },
+    { name: 'Escola', type: 'expense', color: '#f59e0b' },
+    { name: 'Faculdade', type: 'expense', color: '#eab308' },
+    { name: 'Apostas em Despesas', type: 'expense', color: '#65a30d' },
+    { name: 'Trabalho', type: 'income', color: '#22c55e' },
+    { name: 'Freelance', type: 'income', color: '#06b6d4' },
+    { name: 'Comissão', type: 'income', color: '#2563eb' },
+    { name: 'Apostas em Receitas', type: 'income', color: '#7c3aed' },
+    { name: 'Saúde', type: 'expense', color: '#7c3aed' },
+    { name: 'Lazer', type: 'expense', color: '#d946ef' },
+    { name: 'Contas em Despesas', type: 'expense', color: '#ec4899' },
+  ]
+
+  const ensureDefaultCategories = async () => {
+    // Garante que TODAS as categorias padrão existam para qualquer usuário,
+    // adicionando apenas as que estiverem faltando.
+
+    const normalize = (v) => (v || '').toString().trim().toLowerCase()
+
+    // Busca apenas categorias existentes que batem com a lista padrão,
+    // para reduzir chance de corrida/estado e evitar duplicar.
+    const missing = []
+
+    // Cria um set com as existentes (name+type) do usuário
+    const { data: existing, error: existingError } = await supabase
+      .from('categories')
+      .select('name,type')
+      .eq('user_id', user.id)
+
+    if (existingError) {
+      console.error(existingError)
+      return
+    }
+
+    const existingKeySet = new Set((existing || []).map(c => `${normalize(c.name)}::${normalize(c.type)}`))
+
+    for (const c of DEFAULT_CATEGORIES) {
+      const key = `${normalize(c.name)}::${normalize(c.type)}`
+      if (!existingKeySet.has(key)) missing.push(c)
+    }
+
+    if (missing.length === 0) return
+
+    // Upsert por (user_id, name, type) depende de constraint UNIQUE no banco.
+    // Como não sabemos se existe, fazemos tentativa de insert e, em caso de erro,
+    // apenas logamos.
+    const { error } = await supabase
+      .from('categories')
+      .insert(
+        missing.map(c => ({
+          user_id: user.id,
+          name: c.name,
+          type: c.type,
+          color: c.color,
+        }))
+      )
+
+    if (error) console.error(error)
+  }
+
+
+
   useEffect(() => {
-    if (user) fetchCategories()
+    if (!user) return
+
+    const run = async () => {
+      await ensureDefaultCategories()
+      fetchCategories()
+    }
+
+    run()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user])
+
+  // Importante: seed roda para qualquer usuário (incluindo antigos) quando entra em /categories
+
 
   const handleAdd = async (e) => {
     e.preventDefault()
+
     if (!name.trim()) return
     const categoryType = type.toLowerCase()
     const { error } = await supabase
@@ -85,7 +161,7 @@ export default function Categories() {
           to="/transactions"
           className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg font-medium transition-colors"
         >
-          Adicionar Transação
+          Transações
         </Link>
       </div>
 
