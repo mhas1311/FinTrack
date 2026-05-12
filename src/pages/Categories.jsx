@@ -28,18 +28,13 @@ export default function Categories() {
   }
 
   const DEFAULT_CATEGORIES = [
-    { name: 'Compras', type: 'expense', color: '#ef4444' },
-    { name: 'Cartão', type: 'expense', color: '#fb923c' },
-    { name: 'Escola', type: 'expense', color: '#f59e0b' },
-    { name: 'Faculdade', type: 'expense', color: '#eab308' },
-    { name: 'Apostas em Despesas', type: 'expense', color: '#65a30d' },
-    { name: 'Trabalho', type: 'income', color: '#22c55e' },
-    { name: 'Freelance', type: 'income', color: '#06b6d4' },
-    { name: 'Comissão', type: 'income', color: '#2563eb' },
-    { name: 'Apostas em Receitas', type: 'income', color: '#7c3aed' },
-    { name: 'Saúde', type: 'expense', color: '#7c3aed' },
-    { name: 'Lazer', type: 'expense', color: '#d946ef' },
-    { name: 'Contas em Despesas', type: 'expense', color: '#ec4899' },
+    { name: 'Compras', type: 'expense', color: '#f46464' },
+    { name: 'Trabalho', type: 'income', color: '#00de52' },
+    { name: 'Saúde', type: 'expense', color: '#ff0000' },
+    { name: 'Lazer', type: 'expense', color: '#ffa200' },
+    { name: 'Contas', type: 'expense', color: '#ec2086' },
+    { name: 'Transporte', type: 'expense', color: '#920049' },
+    { name: 'Alimentação', type: 'expense', color: '#ff9100' },
   ]
 
   const ensureDefaultCategories = async () => {
