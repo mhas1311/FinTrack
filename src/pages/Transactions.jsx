@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../contexts/AuthContext'
-import { Trash2, Plus, ArrowLeft } from 'lucide-react'
+import { Trash2, Plus, ArrowLeft, Edit3, Check, X } from 'lucide-react'
 
 
 export default function Transactions() {
@@ -16,6 +16,14 @@ export default function Transactions() {
   const [categoryId, setCategoryId] = useState('')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [adding, setAdding] = useState(false)
+  const [editingId, setEditingId] = useState(null)
+  const [editDescription, setEditDescription] = useState('')
+  const [editAmount, setEditAmount] = useState('')
+  const [editType, setEditType] = useState('expense')
+  const [editCategoryId, setEditCategoryId] = useState('')
+  const [editDate, setEditDate] = useState('')
+  const [editStatus, setEditStatus] = useState('pending')
+
 
   const getSituationBadge = (t) => {
     const situation = t.status || null
@@ -59,7 +67,6 @@ export default function Transactions() {
       .update({ status: newSituation })
       .eq('id', id)
 
-
     if (error) {
       console.error('Erro ao atualizar situação:', error)
       return
@@ -67,6 +74,9 @@ export default function Transactions() {
 
     fetchTransactions()
   }
+
+
+
 
 
 
@@ -149,7 +159,65 @@ export default function Transactions() {
   const formatMoney = (value) =>
     new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value)
 
-  return (
+  const startEdit = (t) => {
+    setEditingId(t.id)
+    setEditDescription(t.description || '')
+    setEditAmount(t.amount != null ? String(t.amount) : '')
+    setEditType(t.type || 'expense')
+    setEditCategoryId(t.category_id || '')
+    setEditDate(t.date || '')
+    setEditStatus(t.status || (t.type === 'income' ? 'pending' : 'pending'))
+  }
+
+  const cancelEdit = () => {
+    setEditingId(null)
+  }
+
+  const saveEdit = async (id) => {
+    if (!editDescription.trim()) return
+    if (!editAmount || isNaN(Number(editAmount))) return
+
+    const nextPayload = {
+      description: editDescription.trim(),
+      amount: parseFloat(editAmount),
+      type: editType,
+      category_id: editCategoryId ? editCategoryId : null,
+      date: editDate || undefined,
+      status: editStatus,
+    }
+
+
+    const { error } = await supabase
+      .from('transactions')
+      .update(nextPayload)
+      .eq('id', id)
+      .select()
+      .single()
+
+
+    if (error) {
+      console.error('Erro ao salvar transação:', error)
+      return
+    }
+
+    setEditingId(null)
+    fetchTransactions()
+  }
+
+  const getSituationOptionsFor = (txnType) => {
+    const isIncome = txnType === 'income'
+    return isIncome
+      ? [
+          { value: 'pending', label: 'Pendente' },
+          { value: 'received', label: 'Recebido' },
+        ]
+      : [
+          { value: 'pending', label: 'Pendente' },
+          { value: 'paid', label: 'Pago' },
+        ]
+  }
+
+  return ( 
     <div className="min-h-screen bg-gray-950 text-white p-4 md:p-8">
       {/* Navegação superior */}
       <div className="flex justify-between items-center mb-4">
@@ -217,48 +285,128 @@ export default function Transactions() {
               {transactions.map((t) => (
                 <tr key={t.id} className="border-t border-gray-800 hover:bg-gray-800/50">
                   <td className="p-4">{new Date(t.date).toLocaleDateString('pt-BR')}</td>
-                  <td className="p-4">{t.description}</td>
                   <td className="p-4">
+                    {editingId === t.id ? (
+                      <input
+                        type="text"
+                        value={editDescription}
+                        onChange={(e) => setEditDescription(e.target.value)}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      t.description
+                    )}
+                  </td>
 
-                    {t.category ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.category.color }} />
-                        {t.category.name}
+                  <td className="p-4">
+                    {editingId === t.id ? (
+                      <select
+                        value={editCategoryId}
+                        onChange={(e) => setEditCategoryId(e.target.value)}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="">Sem categoria</option>
+                        {categories
+                          .filter((cat) => cat.type === editType)
+                          .map((cat) => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                          ))}
+                      </select>
+                    ) : (
+                      (t.category ? (
+                        <span className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.category.color }} />
+                          {t.category.name}
+                        </span>
+                      ) : '-')
+                    )}
+                  </td>
+
+                  <td className="p-4">
+                    {editingId === t.id ? (
+                      <select
+                        value={editType}
+                        onChange={(e) => {
+                          const nextType = e.target.value
+                          setEditType(nextType)
+                          setEditCategoryId('')
+                        }}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="expense">Despesa</option>
+                        <option value="income">Receita</option>
+                      </select>
+                    ) : (
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${t.type === 'income' ? 'bg-emerald-900 text-emerald-300' : 'bg-red-900 text-red-300'}`}>
+                        {t.type === 'income' ? 'Receita' : 'Despesa'}
                       </span>
-                    ) : '-'}
+                    )}
                   </td>
-                  <td className="p-4">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${t.type === 'income' ? 'bg-emerald-900 text-emerald-300' : 'bg-red-900 text-red-300'}`}>
-                      {t.type === 'income' ? 'Receita' : 'Despesa'}
-                    </span>
-                  </td>
-      <td className="p-4">
-                    {(() => {
-                      const situation = t.status || null
-                      const isIncome = t.type === 'income'
-                      const next = isIncome
-                        ? (situation === 'received' ? 'pending' : 'received')
-                        : (situation === 'paid' ? 'pending' : 'paid')
 
-                      return (
-                        <button
-                          type="button"
-                          onClick={() => updateTransactionSituation(t.id, next)}
-                          className="cursor-pointer"
-                          title={isIncome ? 'Recebido/Pendente' : 'Pago/Pendente'}
-                        >
-                          {getSituationBadge(t)}
-                        </button>
-                      )
-                    })()}
-                  </td>
-                  <td className={`p-4 text-right font-medium ${t.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
-                    {formatMoney(t.amount)}
-                  </td>
                   <td className="p-4">
-                    <button onClick={() => handleDelete(t.id)} className="text-gray-500 hover:text-red-400 transition-colors">
-                      <Trash2 size={18} />
-                    </button>
+                    {editingId === t.id ? (
+                      <select
+                        value={editStatus || 'pending'}
+                        onChange={(e) => setEditStatus(e.target.value)}
+                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        {getSituationOptionsFor(editType).map((opt) => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      (() => {
+                        const situation = t.status || null
+                        const isIncome = t.type === 'income'
+                        const next = isIncome
+                          ? (situation === 'received' ? 'pending' : 'received')
+                          : (situation === 'paid' ? 'pending' : 'paid')
+
+                        return (
+                          <button
+                            type="button"
+                            onClick={() => updateTransactionSituation(t.id, next)}
+                            className="cursor-pointer"
+                            title={isIncome ? 'Recebido/Pendente' : 'Pago/Pendente'}
+                          >
+                            {getSituationBadge(t)}
+                          </button>
+                        )
+                      })()
+                    )}
+                  </td>
+
+                  <td className={`p-4 text-right font-medium ${t.type === 'income' ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {editingId === t.id ? (
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={editAmount}
+                        onChange={(e) => setEditAmount(e.target.value)}
+                        className="w-32 bg-gray-800 border border-gray-700 rounded-lg px-2 py-1 text-right focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    ) : (
+                      formatMoney(t.amount)
+                    )}
+                  </td>
+
+                  <td className="p-4">
+                    {editingId === t.id ? (
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => saveEdit(t.id)} className="text-emerald-400 hover:text-emerald-300"><Check size={18} /></button>
+                        <button onClick={cancelEdit} className="text-gray-400 hover:text-gray-300"><X size={18} /></button>
+                      </div>
+                    ) : (
+                      <button onClick={() => startEdit(t)} className="text-gray-500 hover:text-blue-400 transition-colors">
+                        <Edit3 size={18} />
+                      </button>
+                    )}
+
+                    {editingId !== t.id && (
+                      <button onClick={() => handleDelete(t.id)} className="ml-2 text-gray-500 hover:text-red-400 transition-colors">
+                        <Trash2 size={18} />
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))}
